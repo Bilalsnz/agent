@@ -7,7 +7,7 @@ try {
   const raw = Array.isArray(saved.vendors) ? saved.vendors : [];
   const seen = new Set();
   state.vendors = raw.filter(v => {
-    if (!v || !String(v.name || "").trim() || /^unnamed\\b/i.test(String(v.name).trim())) return false;
+    if (!v || !String(v.name || "").trim() || /^unnamed\b/i.test(String(v.name).trim())) return false;
     const norm = String(v.name).toLocaleLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
     const address = String(v.address || "").toLocaleLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
     const key = v.placeId ? "place:" + v.placeId : norm + "|" + address;
@@ -57,5 +57,29 @@ $("#reply-form").addEventListener("submit",e=>{
   $("#reply-dialog").close();save();
 });
 $("#export-report").addEventListener("click",()=>{const payload={generatedAt:new Date().toISOString(),event:state.brief,vendors:state.vendors.map(v=>({name:v.name,website:v.website||null,email:v.email||null,phone:v.phone||null,source:v.source||null,status:statusLabel(v.status),priceActuallyStated:v.price||null,responseDetails:v.details||null,evidenceReference:v.evidence||null})),integrity:{pricesAreVendorReported:true,availabilityRequiresVendorConfirmation:true,nonRespondersIncluded:true}};const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="caterscout-evidence-report.json";a.click();URL.revokeObjectURL(a.href);});
+
+function csvCell(value){const text=String(value??"");return '"' + text.replace(/"/g,'""') + '"';}
+$("#export-csv").addEventListener("click",()=>{
+  const b=state.brief||{};
+  const rows=[["Event location","Event date","Guest count","Event type","Dietary needs","Budget per person","Currency","Vendor","Category","Source","Website","Email","Phone","Status","Price actually stated","Response details","Evidence reference","Contacted at","Follow-up at"]];
+  for(const v of state.vendors) rows.push([b.location||"",b.date||"",b.guests||"",b.eventType||"",b.dietary||"",b.budget??"",b.currency||"",v.name||"",v.category||"",v.source||"",v.website||"",v.email||"",v.phone||"",statusLabel(v.status),v.price||"",v.details||"",v.evidence||"",v.contactedAt||"",v.followUpAt||""]);
+  const csv="\\uFEFF"+rows.map(row=>row.map(csvCell).join(",")).join("\\r\\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="caterscout-evidence-report.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+$("#print-report").addEventListener("click",()=>{ $("#report-section").scrollIntoView({behavior:"smooth"}); setTimeout(()=>window.print(),250); });
+$("#clean-vendors").addEventListener("click",()=>{
+  const before=state.vendors.length,seen=new Set();
+  state.vendors=state.vendors.filter(v=>{
+    if(!String(v.name||"").trim()||/^unnamed\\b/i.test(String(v.name||"").trim()))return false;
+    const name=String(v.name).toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+    const address=String(v.address||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+    const key=v.placeId?"place:"+v.placeId:name+"|"+address;
+    if(seen.has(key)&&["lead","drafted"].includes(v.status))return false;
+    seen.add(key);return true;
+  });
+  save();alert("Shortlist cleaned. Removed "+(before-state.vendors.length)+" unnamed or duplicate lead(s). Existing response records were preserved where possible.");
+});
+
 $("#nav-vendors").addEventListener("click",()=>$("#vendors-section").scrollIntoView({behavior:"smooth"}));$("#nav-report").addEventListener("click",()=>$("#report-section").scrollIntoView({behavior:"smooth"}));
 render();
