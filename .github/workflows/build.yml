@@ -13,4 +13,7 @@ jobs:
         with:
           node-version: 20
       - run: npm install
-      - run: npm run build
+      - name: Check JavaScript syntax
+        run: node --check app.js && node --check api/vendors.js && node --check api/contact.js
+      - name: Build production bundle
+        run: npm run build
