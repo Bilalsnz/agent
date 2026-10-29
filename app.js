@@ -70,8 +70,10 @@ function normalizeWhatsAppNumber(phone, location="") {
   const hasInternationalPrefix = raw.startsWith("+") || raw.startsWith("00");
   let digits = raw.replace(/[^0-9]/g, "");
   if (digits.startsWith("00")) digits = digits.slice(2);
-  if (!hasInternationalPrefix && /singapore|\bsg\b/i.test(String(location)) && digits.length === 8) digits = "65" + digits;
-  else if (!hasInternationalPrefix && !/singapore|\bsg\b/i.test(String(location)) && digits.startsWith("0")) digits = "234" + digits.slice(1);
+  const market = String(location || "");
+  if (!hasInternationalPrefix && /canada|\bca\b|toronto|ontario|united states|\busa\b|\bus\b/i.test(market) && digits.length === 10) digits = "1" + digits;
+  else if (!hasInternationalPrefix && /singapore|\bsg\b/i.test(market) && digits.length === 8) digits = "65" + digits;
+  else if (!hasInternationalPrefix && /nigeria|\bng\b/i.test(market) && digits.startsWith("0")) digits = "234" + digits.slice(1);
   return digits;
 }
 function makeEmail(v,b){return `Hello ${v.name},\n\nI'm enquiring about catering for a ${b.eventType} in ${b.location} on ${b.date} for approximately ${b.guests} guests.\n\nCould you please confirm:\n1. Whether you are available on that date and can serve this guest count.\n2. Your actual price, including per-person rate, delivery, taxes, staffing and any minimum order. Please specify the currency.\n3. Whether you can accommodate these dietary needs: ${b.dietary||"Please share your available dietary options"}.\n4. What the quoted price includes, and any deposit or cancellation terms.\n5. Your menu options and how long the quote remains valid.\n\nBudget guidance: ${b.budget!==null&&b.budget!==undefined?b.budget+" "+b.currency+" per person":"not specified"}.\nAdditional details: ${b.notes||"None at this stage"}.\n\nPlease share the price and availability you can actually offer for this date. Thank you.\n\nBest regards`;}
