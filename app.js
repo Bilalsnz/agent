@@ -5,7 +5,12 @@ try { const saved = JSON.parse(localStorage.getItem(storeKey) || "{}"); state.br
 const esc = (v = "") => String(v).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
 const save = () => { localStorage.setItem(storeKey, JSON.stringify({ brief: state.brief, vendors: state.vendors })); render(); };
 const dateInput = $('input[name="date"]');
-if (dateInput) { const d = new Date(); d.setDate(d.getDate()+7); dateInput.value = d.toISOString().slice(0,10); }
+if (state.brief) {
+  for (const [key, value] of Object.entries({location:state.brief.location,date:state.brief.date,guests:state.brief.guests,eventType:state.brief.eventType,dietary:state.brief.dietary,budget:state.brief.budget,currency:state.brief.currency,notes:state.brief.notes})) {
+    const field = document.querySelector(`[name="${key}"]`);
+    if (field && value !== null && value !== undefined) field.value = value;
+  }
+} else if (dateInput) { const d = new Date(); d.setDate(d.getDate()+7); dateInput.value = d.toISOString().slice(0,10); }
 function briefFromForm(){ const f = new FormData($("#brief-form")); return { location:f.get("location").trim(),date:f.get("date"),guests:Number(f.get("guests")),eventType:f.get("eventType").trim(),dietary:f.get("dietary").trim(),budget:f.get("budget") ? Number(f.get("budget")) : null,currency:f.get("currency"),notes:f.get("notes").trim() }; }
 function id(){ return crypto.randomUUID ? crypto.randomUUID() : String(Date.now())+Math.random().toString(16).slice(2); }
 function statusLabel(v){ return ({lead:"Not contacted",drafted:"Draft prepared",contacted:"Contacted",replied:"Reply received",quoted:"Price quoted",unavailable:"Unavailable", "no-reply":"No reply"})[v] || v; }
