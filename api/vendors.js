@@ -16,29 +16,29 @@ async function searchOpenStreetMap(location) {
   });
   if (!overpassResponse.ok) throw new Error("OpenStreetMap vendor search is temporarily unavailable. Retry or add vendors manually.");
   const data = await overpassResponse.json();
+  const seen = new Set();
   return (data.elements || []).map((item) => {
     const tags = item.tags || {};
+    const name = (tags.name || tags.brand || "").trim();
+    if (!name) return null;
+    const normalizedName = name.toLocaleLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
     const itemLat = item.lat ?? item.center?.lat;
     const itemLon = item.lon ?? item.center?.lon;
+    const address = [tags["addr:street"], tags["addr:housenumber"], tags["addr:city"]].filter(Boolean).join(" ");
+    const coords = itemLat && itemLon ? Number(itemLat).toFixed(4) + "," + Number(itemLon).toFixed(4) : "";
+    const dedupeKey = normalizedName + "|" + (address.toLocaleLowerCase() || coords);
+    if (seen.has(dedupeKey)) return null;
+    seen.add(dedupeKey);
     const website = tags.website || tags["contact:website"] || "";
     const phone = tags.phone || tags["contact:phone"] || "";
     const email = tags.email || tags["contact:email"] || "";
+    const category = tags.craft === "caterer" || tags.shop === "caterer" ? "Caterer" : "Restaurant / dining";
     return {
-      placeId: "osm-" + item.type + "-" + item.id,
-      name: tags.name || tags.brand || "Unnamed food business",
-      address: [tags["addr:street"], tags["addr:housenumber"], tags["addr:city"]].filter(Boolean).join(" "),
-      website,
-      phone,
-      email,
-      mapsUrl: itemLat && itemLon ? `https://www.openstreetmap.org/?mlat=${itemLat}&mlon=${itemLon}#map=17/${itemLat}/${itemLon}` : "",
-      businessStatus: "UNKNOWN",
-      source: "OpenStreetMap",
-      status: "lead",
-      price: "",
-      details: "",
-      evidence: ""
+      placeId: "osm-" + item.type + "-" + item.id, name, category, address, website, phone, email,
+      mapsUrl: itemLat && itemLon ? "https://www.openstreetmap.org/?mlat=" + itemLat + "&mlon=" + itemLon + "#map=17/" + itemLat + "/" + itemLon : "",
+      businessStatus: "UNKNOWN", source: "OpenStreetMap", status: "lead", price: "", details: "", evidence: ""
     };
-  });
+  }).filter(Boolean).slice(0, 20);
 }
 
 export default async function handler(req, res) {
