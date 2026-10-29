@@ -10,7 +10,7 @@ CaterScout is an evidence-first group dining research workspace built for the NE
 ## Workflow
 
 1. **Describe the event.** Set location, date, guest count, event type, dietary needs, budget, currency, and practical notes.
-2. **Discover leads.** Search OpenStreetMap without an API key, or use Google Places when `GOOGLE_MAPS_API_KEY` is configured. Named results are deduplicated and caterer-tagged results are ranked ahead of restaurants and takeaway listings.
+2. **Discover leads.** Search OpenStreetMap without an API key, or use Google Places when `GOOGLE_MAPS_API_KEY` is configured. The search covers a wider local radius and prioritizes caterers and listings with published contact details. For Toronto searches, CaterScout also adds a small curated directory of contact details published on official catering business websites, with source links recorded for verification.
 3. **Verify the contact.** Use website, map, phone, WhatsApp, or email links. Use **Edit details** to add or correct a vendor's contact information.
 4. **Send the inquiry.** Prepare a tailored inquiry, copy it into WhatsApp or another channel, open a mail draft, or send through Resend if configured. Sending email requires a verified vendor email and an explicit confirmation.
 5. **Track what happened.** Record the response status, actual stated price, availability/dietary details, and an evidence reference. Quoted status requires a price; the app warns if a quote has no evidence reference.
@@ -29,7 +29,7 @@ CaterScout is an evidence-first group dining research workspace built for the NE
 
 - Event and vendor records are stored in the current browser's local storage. They do not automatically sync across devices or browsers. Export JSON regularly as a backup.
 - The app does not currently read incoming vendor email automatically. A user records responses from email, phone, WhatsApp, or other channels.
-- OpenStreetMap coverage varies by area, and many listings have no published phone, website, or email. Use the map and official website to verify details before outreach.
+- OpenStreetMap coverage varies by area, and many listings have no published phone, website, or email. Toronto searches include a limited curated set of official business contact pages as a supplement, not a guarantee of complete coverage. Recheck every contact and service area before outreach.
 - Optional Resend email sending requires `RESEND_API_KEY` and a verified `RESEND_FROM` address in Vercel.
 - Optional Google Places discovery requires `GOOGLE_MAPS_API_KEY`. The default OpenStreetMap path requires no paid API key.
 
