@@ -17,7 +17,7 @@ async function searchOpenStreetMap(location) {
   if (!matches.length) throw new Error("Could not find that location. Try a city and state, such as Houston, Texas, USA.");
   const [lat, lon] = [Number(matches[0].lat), Number(matches[0].lon)];
   // Keep the query modest and try more than one public Overpass instance.
-  const query = `[out:json][timeout:18];(nwr(around:10000,${lat},${lon})["craft"="caterer"];nwr(around:10000,${lat},${lon})["shop"="caterer"];nwr(around:10000,${lat},${lon})["catering"="yes"];nwr(around:10000,${lat},${lon})["amenity"="restaurant"];);out center tags 60;`;
+  const query = `[out:json][timeout:18];(nwr(around:5000,${lat},${lon})["craft"="caterer"];nwr(around:10000,${lat},${lon})["shop"="caterer"];nwr(around:10000,${lat},${lon})["catering"="yes"];nwr(around:10000,${lat},${lon})["amenity"="restaurant"];);out center tags 30;`;
   const endpoints = [
     "https://overpass-api.de/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
@@ -30,7 +30,7 @@ async function searchOpenStreetMap(location) {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8", "User-Agent": "CaterScoutAgent/0.2 (vendor research)" },
         body: "data=" + encodeURIComponent(query),
-        signal: AbortSignal.timeout(22000)
+        signal: AbortSignal.timeout(12000)
       });
       if (!response.ok) continue;
       const result = await response.json();
