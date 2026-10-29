@@ -63,7 +63,7 @@ $("#export-csv").addEventListener("click",()=>{
   const b=state.brief||{};
   const rows=[["Event location","Event date","Guest count","Event type","Dietary needs","Budget per person","Currency","Vendor","Category","Source","Website","Email","Phone","Status","Price actually stated","Response details","Evidence reference","Contacted at","Follow-up at"]];
   for(const v of state.vendors) rows.push([b.location||"",b.date||"",b.guests||"",b.eventType||"",b.dietary||"",b.budget??"",b.currency||"",v.name||"",v.category||"",v.source||"",v.website||"",v.email||"",v.phone||"",statusLabel(v.status),v.price||"",v.details||"",v.evidence||"",v.contactedAt||"",v.followUpAt||""]);
-  const csv="\\uFEFF"+rows.map(row=>row.map(csvCell).join(",")).join("\\r\\n");
+  const csv="\uFEFF"+rows.map(row=>row.map(csvCell).join(",")).join("\r\n");
   const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
   const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="caterscout-evidence-report.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
