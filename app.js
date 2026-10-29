@@ -5,13 +5,14 @@ try {
   const saved = JSON.parse(localStorage.getItem(storeKey) || "{}");
   state.brief = saved.brief || null;
   const raw = Array.isArray(saved.vendors) ? saved.vendors : [];
-  // Migrate the previous Houston test workspace to the requested Singapore market.
-  if (state.brief && /houston|texas/i.test(String(state.brief.location || ""))) {
-    state.brief.location = "Singapore";
-    state.brief.currency = "SGD";
+  // Migrate older test workspaces to the approved Toronto test market.
+  if (state.brief && /houston|texas|singapore|\bsg\b/i.test(String(state.brief.location || ""))) {
+    state.brief.location = "Toronto, Ontario, Canada";
+    state.brief.currency = "CAD";
     // Do not mix old-market leads into the new market's results.
     const hasOutreachHistory = raw.some(v => v && !["lead", "drafted"].includes(v.status));
     if (!hasOutreachHistory) raw.length = 0;
+    else raw.forEach(v => { if (v && v.source) v.source = "Previous-market record, verify location: " + v.source; });
   }
   const seen = new Set();
   state.vendors = raw.filter(v => {
@@ -103,7 +104,7 @@ $("#export-csv").addEventListener("click",()=>{
   const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="caterscout-evidence-report.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
 $("#print-report").addEventListener("click",()=>{ $("#report-section").scrollIntoView({behavior:"smooth"}); setTimeout(()=>window.print(),250); });
-$("#switch-us-market").addEventListener("click",()=>{if(!confirm("Switch this workspace to Singapore? This clears the current vendor shortlist so leads from different markets are not mixed. Your event date, guest count, and other event details will be kept."))return;const locationField=document.querySelector('[name="location"]');const currencyField=document.querySelector('[name="currency"]');if(locationField)locationField.value="Singapore";if(currencyField)currencyField.value="SGD";state.brief={...(state.brief||briefFromForm()),location:"Singapore",currency:"SGD"};state.vendors=[];save();alert("Market switched to Singapore. Tap Find caterers to run a fresh search. Contact details and availability still need to be verified.");});
+$("#switch-us-market").addEventListener("click",()=>{if(!confirm("Switch this workspace to Toronto, Canada? This clears the current vendor shortlist so leads from different markets are not mixed. Your event date, guest count, and other event details will be kept."))return;const locationField=document.querySelector('[name="location"]');const currencyField=document.querySelector('[name="currency"]');if(locationField)locationField.value="Toronto, Ontario, Canada";if(currencyField)currencyField.value="CAD";state.brief={...(state.brief||briefFromForm()),location:"Toronto, Ontario, Canada",currency:"CAD"};state.vendors=[];save();alert("Market switched to Toronto, Canada. Tap Find caterers to run a fresh search. Contact details and availability still need to be verified.");});
 
 $("#clean-vendors").addEventListener("click",()=>{
   const before=state.vendors.length,seen=new Set();
