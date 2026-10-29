@@ -179,7 +179,7 @@ const TORONTO_PUBLIC_CONTACTS = [
 ];
 
 function addTorontoPublicContacts(vendors, location) {
-  if (!/toronto|greater toronto area|\\bgta\\b/i.test(String(location || ""))) return vendors;
+  if (!/toronto|greater toronto area|\bgta\b/i.test(String(location || ""))) return vendors;
   const merged = [...vendors];
   const seen = new Set(vendors.map(v => String(v.name || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()));
   for (const vendor of TORONTO_PUBLIC_CONTACTS) {
@@ -230,7 +230,7 @@ export default async function handler(req, res) {
       source = "OpenStreetMap";
     }
     vendors = addTorontoPublicContacts(vendors, location);
-    return res.status(200).json({ source: source + (/toronto|greater toronto area|\\bgta\\b/i.test(String(location || "")) ? " + official Toronto contact directory" : ""), count: vendors.length, vendors, note: "Search results are leads only. Contact details are sourced from official business websites where noted. Confirm event availability, capacity, dietary accommodation, and prices directly with each vendor." });
+    return res.status(200).json({ source: source + (/toronto|greater toronto area|\bgta\b/i.test(String(location || "")) ? " + official Toronto contact directory" : ""), count: vendors.length, vendors, note: "Search results are leads only. Contact details are sourced from official business websites where noted. Confirm event availability, capacity, dietary accommodation, and prices directly with each vendor." });
   } catch (error) {
     return res.status(502).json({ error: error?.message || "Vendor discovery failed. Please retry or add vendors manually." });
   }
