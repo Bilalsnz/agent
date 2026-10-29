@@ -8,7 +8,7 @@ async function searchOpenStreetMap(location) {
   const matches = await geoResponse.json();
   if (!matches.length) return [];
   const [lat, lon] = [Number(matches[0].lat), Number(matches[0].lon)];
-  const query = `[out:json][timeout:20];(nwr(around:12000,${lat},${lon})["craft"="caterer"];nwr(around:12000,${lat},${lon})["shop"="caterer"];nwr(around:12000,${lat},${lon})["amenity"="restaurant"];);out center tags 30;`;
+  const query = `[out:json][timeout:25];(nwr(around:15000,${lat},${lon})["craft"="caterer"];nwr(around:15000,${lat},${lon})["shop"="caterer"];nwr(around:15000,${lat},${lon})["catering"="yes"];nwr(around:15000,${lat},${lon})["amenity"="restaurant"];nwr(around:15000,${lat},${lon})["amenity"="fast_food"];);out center tags 80;`
   const overpassResponse = await fetch("https://overpass-api.de/api/interpreter", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8", "User-Agent": "CaterScoutAgent/0.1 (vendor research demo)" },
@@ -32,13 +32,13 @@ async function searchOpenStreetMap(location) {
     const website = tags.website || tags["contact:website"] || "";
     const phone = tags.phone || tags["contact:phone"] || "";
     const email = tags.email || tags["contact:email"] || "";
-    const category = tags.craft === "caterer" || tags.shop === "caterer" ? "Caterer" : "Restaurant / dining";
+    const category = tags.craft === "caterer" || tags.shop === "caterer" || tags.catering === "yes" ? "Caterer" : tags.amenity === "fast_food" ? "Quick service / takeaway" : "Restaurant / dining";
     return {
       placeId: "osm-" + item.type + "-" + item.id, name, category, address, website, phone, email,
       mapsUrl: itemLat && itemLon ? "https://www.openstreetmap.org/?mlat=" + itemLat + "&mlon=" + itemLon + "#map=17/" + itemLat + "/" + itemLon : "",
       businessStatus: "UNKNOWN", source: "OpenStreetMap", status: "lead", price: "", details: "", evidence: ""
     };
-  }).filter(Boolean).slice(0, 20);
+  }).filter(Boolean).sort((a, b) => (a.category === "Caterer" ? 0 : 1) - (b.category === "Caterer" ? 0 : 1)).slice(0, 30);
 }
 
 export default async function handler(req, res) {
@@ -53,13 +53,14 @@ export default async function handler(req, res) {
       const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Goog-Api-Key": process.env.GOOGLE_MAPS_API_KEY, "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.websiteUri,places.nationalPhoneNumber,places.googleMapsUri,places.businessStatus" },
-        body: JSON.stringify({ textQuery: `catering services ${location}`, pageSize: 10 })
+        body: JSON.stringify({ textQuery: `catering services and caterers for group events in ${location}`, pageSize: 20 })
       });
       const data = await response.json();
       if (!response.ok) return res.status(502).json({ error: data.error?.message || "Google Places could not complete the search." });
       vendors = (data.places || []).map(p => ({
         placeId: p.id,
-        name: p.displayName?.text || "Unnamed catering business",
+        name: p.displayName?.text || "",
+        category: /cater/i.test(p.displayName?.text || "") ? "Caterer" : "Restaurant / dining",
         address: p.formattedAddress || "",
         website: p.websiteUri || "",
         phone: p.nationalPhoneNumber || "",
@@ -71,7 +72,7 @@ export default async function handler(req, res) {
         price: "",
         details: "",
         evidence: ""
-      }));
+      })).filter(p => p.name && p.name.trim());
       source = "Google Places";
     } else {
       vendors = await searchOpenStreetMap(location);
