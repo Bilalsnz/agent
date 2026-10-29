@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#101411" />
+  <meta name="description" content="CaterScout helps plan group dining with evidence-first vendor research and outreach tracking." />
+  <title>CaterScout | Group Dining Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="#"><span class="brand-mark">C</span><span>CaterScout<small>GROUP DINING AGENT</small></span></a>
+      <div class="side-label">WORKSPACE</div>
+      <button class="nav-item active"><span>◈</span> Event brief</button>
+      <button class="nav-item" id="nav-vendors"><span>⌕</span> Vendor pipeline <b id="nav-count">0</b></button>
+      <button class="nav-item" id="nav-report"><span>▤</span> Evidence report</button>
+      <div class="side-bottom"><div class="status-dot"></div><span>Evidence-first mode</span><p>Prices are never guessed. No replies stay visible.</p></div>
+    </aside>
+    <main class="main">
+      <header class="topbar"><div><span class="eyebrow">AGENT WORKSPACE / 01</span><h1>Plan a group meal.</h1><p class="subhead">Find caterers, ask the right questions, and keep every response accountable.</p></div><div class="top-badge"><span class="status-dot"></span> Ready to research</div></header>
+      <section class="brief-grid">
+        <form id="brief-form" class="panel brief-panel">
+          <div class="panel-head"><div><span class="step">01</span><h2>Event brief</h2></div><span class="micro">REQUIRED DETAILS</span></div>
+          <label>Event location<input name="location" placeholder="e.g. Ikeja, Lagos, Nigeria" required value="Lagos, Nigeria"></label>
+          <div class="two-col">
+            <label>Event date<input name="date" type="date" required></label>
+            <label>Guest count<input name="guests" type="number" min="1" max="5000" value="40" required></label>
+          </div>
+          <label>Event type<input name="eventType" placeholder="e.g. corporate lunch" value="Corporate lunch" required></label>
+          <label>Dietary needs <span class="optional">OPTIONAL</span><input name="dietary" placeholder="e.g. halal, vegetarian options"></label>
+          <div class="two-col">
+            <label>Budget per person<input name="budget" type="number" min="0" step="0.01" placeholder="e.g. 25"></label>
+            <label>Currency<select name="currency"><option>USD</option><option>NGN</option><option>GBP</option><option>EUR</option><option>USDC</option></select></label>
+          </div>
+          <label>Extra notes <span class="optional">OPTIONAL</span><textarea name="notes" rows="2" placeholder="Delivery, serving staff, equipment, venue constraints..."></textarea></label>
+          <button class="primary-btn" type="submit" id="search-btn"><span>⌕</span> Find caterers <span class="arrow">↗</span></button>
+          <p class="form-note">Discovery uses real search results when configured. Results are leads, not availability confirmations.</p>
+        </form>
+        <div class="right-stack">
+          <section class="panel summary-panel"><div class="panel-head"><div><span class="step">02</span><h2>Pipeline overview</h2></div><span class="live-label">LIVE WORKSPACE</span></div><div class="stats"><div><strong id="stat-vendors">0</strong><span>Vendors found</span></div><div><strong id="stat-contacted">0</strong><span>Contacted</span></div><div><strong id="stat-replies">0</strong><span>Replies logged</span></div><div><strong id="stat-quotes">0</strong><span>Real quotes</span></div></div><div class="progress-line"><span id="progress-fill"></span></div><div class="progress-foot"><span>Outreach progress</span><strong id="progress-text">0%</strong></div></section>
+          <section class="panel rule-panel"><span class="rule-icon">✳</span><div><h3>Evidence over assumptions</h3><p>We only report prices a vendor actually states. Every lead stays in the final report, including vendors who never reply.</p></div></section>
+          <section class="panel activity-panel"><div class="panel-head"><div><span class="step">03</span><h2>Next actions</h2></div></div><div class="action-row"><span class="action-num">1</span><div><strong>Discover local vendors</strong><small>Search using the event location and guest needs.</small></div><span class="action-state" id="action-search">WAITING</span></div><div class="action-row"><span class="action-num">2</span><div><strong>Send a specific inquiry</strong><small>Ask for date, capacity, dietary fit and total price.</small></div><span class="action-state" id="action-contact">WAITING</span></div><div class="action-row"><span class="action-num">3</span><div><strong>Record replies and report</strong><small>Keep quotes and non-responses transparent.</small></div><span class="action-state" id="action-report">WAITING</span></div></section>
+        </div>
+      </section>
+      <section class="panel vendors-panel" id="vendors-section"><div class="panel-head"><div><span class="step">04</span><h2>Vendor pipeline</h2></div><div class="head-actions"><span id="vendor-total" class="micro">0 VENDORS</span><button id="add-vendor" class="secondary-btn">+ Add vendor</button></div></div><div id="empty-state" class="empty-state"><div class="empty-icon">⌕</div><h3>Your shortlist starts here</h3><p>Enter an event brief and search for caterers. You can also add a vendor manually.</p><button class="secondary-btn" id="empty-add">+ Add a vendor manually</button></div><div id="vendor-list" class="vendor-list"></div></section>
+      <section class="panel report-panel" id="report-section"><div class="panel-head"><div><span class="step">05</span><h2>Evidence report</h2></div><button class="primary-btn compact" id="export-report">Export report ↗</button></div><div class="report-preview" id="report-preview"><p>Complete an event brief and track vendor responses to generate a report.</p></div></section>
+      <footer><span>CATER SCOUT / BUILT FOR REAL-WORLD GROUP DINING</span><span>NO FABRICATED QUOTES · NO HIDDEN NON-RESPONSES</span></footer>
+    </main>
+  </div>
+  <dialog id="vendor-dialog"><form id="vendor-form" method="dialog"><div class="dialog-head"><h2>Add vendor</h2><button type="button" id="close-dialog" class="close-btn">×</button></div><label>Business name<input name="name" required placeholder="Caterer name"></label><label>Website<input name="website" type="url" placeholder="https://..."></label><label>Contact email<input name="email" type="email" placeholder="events@example.com"></label><label>Phone / contact details<input name="phone" placeholder="+234..."></label><label>Source or notes<input name="source" placeholder="Where you found this vendor"></label><button class="primary-btn" type="submit">Add to pipeline ↗</button></form></dialog>
+  <dialog id="reply-dialog"><form id="reply-form" method="dialog"><div class="dialog-head"><h2>Record vendor response</h2><button type="button" id="close-reply" class="close-btn">×</button></div><input name="vendorId" type="hidden"><label>Response status<select name="status"><option value="replied">Replied, needs review</option><option value="quoted">Quoted a price</option><option value="unavailable">Unavailable on requested date</option><option value="no-reply">No reply</option></select></label><label>Actual quoted price <span class="optional">ONLY IF STATED</span><input name="price" placeholder="e.g. 180000 NGN total"></label><label>Availability / dietary confirmation<textarea name="details" rows="3" placeholder="Record what the vendor actually said, or what remains unconfirmed."></textarea></label><label>Evidence reference<input name="evidence" placeholder="Email subject, message date, call notes, URL..."></label><button class="primary-btn" type="submit">Save response ↗</button></form></dialog>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
