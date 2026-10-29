@@ -119,6 +119,79 @@ async function searchOpenStreetMap(location) {
   }).filter(Boolean).sort((a, b) => ((a.category === "Caterer" ? 0 : 1) - (b.category === "Caterer" ? 0 : 1)) || (((b.email ? 2 : 0) + (b.phone ? 1 : 0) + (b.website ? 1 : 0)) - ((a.email ? 2 : 0) + (a.phone ? 1 : 0) + (a.website ? 1 : 0)))).slice(0, 40);
 }
 
+const TORONTO_PUBLIC_CONTACTS = [
+  {
+    name: "Cleese Catering", category: "Caterer",
+    address: "Toronto, Ontario, Canada", website: "https://cleesecatering.com/",
+    phone: "+1 416-463-3895", email: "catering@cleesecatering.com",
+    mapsUrl: "", businessStatus: "UNKNOWN", source: "Official website · Toronto contact directory",
+    status: "lead", price: "", details: "Corporate catering and event services listed for Toronto and the GTA. Date availability, group capacity, dietary fit, and pricing are not yet confirmed.",
+    evidence: "https://cleesecatering.com/"
+  },
+  {
+    name: "We Cater To You", category: "Caterer",
+    address: "171 East Liberty Street, Unit 107, Toronto, ON M6K 3P6, Canada",
+    website: "https://www.wecatertoyou.ca/", phone: "+1 647-436-3831", email: "orders@wecatertoyou.ca",
+    mapsUrl: "", businessStatus: "UNKNOWN", source: "Official website · Toronto contact directory",
+    status: "lead", price: "", details: "Corporate and office catering across Toronto and the GTA. Minimum order and event-specific availability require confirmation.",
+    evidence: "https://www.wecatertoyou.ca/"
+  },
+  {
+    name: "Catering By Nikos", category: "Caterer",
+    address: "963 O'Connor Drive, Toronto, ON M4B 2T1, Canada",
+    website: "https://www.cateringbynikos.com/contact-us", phone: "+1 416-429-9325", email: "catering@cateringbynikos.com",
+    mapsUrl: "", businessStatus: "UNKNOWN", source: "Official website · Toronto contact directory",
+    status: "lead", price: "", details: "Catering contact published on the business website. Event availability, capacity, dietary fit, and pricing are not yet confirmed.",
+    evidence: "https://www.cateringbynikos.com/contact-us"
+  },
+  {
+    name: "Big City Catering", category: "Caterer",
+    address: "707 Dundas Street West, Toronto, ON M5T 2W6, Canada",
+    website: "https://bigcitycatering.ca/contact/", phone: "", email: "orders@bigcitycatering.ca",
+    mapsUrl: "", businessStatus: "UNKNOWN", source: "Official website · Toronto contact directory",
+    status: "lead", price: "", details: "Official contact form and order email published. Event availability, capacity, dietary fit, and pricing are not yet confirmed.",
+    evidence: "https://bigcitycatering.ca/contact/"
+  },
+  {
+    name: "Shawarma Moose Catering", category: "Caterer",
+    address: "898 College Street, Toronto, ON M6H 1A4, Canada",
+    website: "https://shawarmamoose.ca/contact", phone: "+1 647-340-8001", email: "catering@shawarmamoose.ca",
+    mapsUrl: "", businessStatus: "UNKNOWN", source: "Official website · Toronto contact directory",
+    status: "lead", price: "", details: "Official catering contact page. Date availability, group capacity, dietary fit, and pricing are not yet confirmed.",
+    evidence: "https://shawarmamoose.ca/contact"
+  },
+  {
+    name: "Silver Feast Catering", category: "Caterer",
+    address: "Pickering, Ontario, Canada · Serves Toronto and the GTA",
+    website: "https://silverfeastcatering.ca/contact/", phone: "+1 647-830-0079", email: "silverfeastcatering@gmail.com",
+    mapsUrl: "", businessStatus: "UNKNOWN", source: "Official website · Toronto-area contact directory",
+    status: "lead", price: "", details: "Official website lists Toronto and GTA service. Confirm travel/delivery to the event address, availability, capacity, dietary fit, and pricing.",
+    evidence: "https://silverfeastcatering.ca/contact/"
+  },
+  {
+    name: "Chef Hassan's Kitchen", category: "Caterer",
+    address: "Toronto and the Greater Toronto Area, Canada",
+    website: "https://shopchk.com/pages/contact", phone: "", email: "info@chefhassanskitchen.com",
+    mapsUrl: "", businessStatus: "UNKNOWN", source: "Official website · Toronto-area contact directory",
+    status: "lead", price: "", details: "Official contact page lists Toronto and GTA service. Minimum lead time, availability, capacity, dietary fit, and pricing require confirmation.",
+    evidence: "https://shopchk.com/pages/contact"
+  }
+];
+
+function addTorontoPublicContacts(vendors, location) {
+  if (!/toronto|greater toronto area|\\bgta\\b/i.test(String(location || ""))) return vendors;
+  const merged = [...vendors];
+  const seen = new Set(vendors.map(v => String(v.name || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()));
+  for (const vendor of TORONTO_PUBLIC_CONTACTS) {
+    const key = vendor.name.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    if (!seen.has(key)) {
+      merged.push({ ...vendor, placeId: "toronto-public-" + key.replace(/ /g, "-") });
+      seen.add(key);
+    }
+  }
+  return merged.sort((a, b) => ((a.category === "Caterer" ? 0 : 1) - (b.category === "Caterer" ? 0 : 1)) || (((b.email ? 2 : 0) + (b.phone ? 1 : 0) + (b.website ? 1 : 0)) - ((a.email ? 2 : 0) + (a.phone ? 1 : 0) + (a.website ? 1 : 0))));
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
   const { location, guests } = req.body || {};
@@ -156,7 +229,8 @@ export default async function handler(req, res) {
       vendors = await searchOpenStreetMap(location);
       source = "OpenStreetMap";
     }
-    return res.status(200).json({ source, count: vendors.length, vendors, note: "Search results are leads only. Confirm event availability, dietary accommodation, and prices directly with each vendor." });
+    vendors = addTorontoPublicContacts(vendors, location);
+    return res.status(200).json({ source: source + (/toronto|greater toronto area|\\bgta\\b/i.test(String(location || "")) ? " + official Toronto contact directory" : ""), count: vendors.length, vendors, note: "Search results are leads only. Contact details are sourced from official business websites where noted. Confirm event availability, capacity, dietary accommodation, and prices directly with each vendor." });
   } catch (error) {
     return res.status(502).json({ error: error?.message || "Vendor discovery failed. Please retry or add vendors manually." });
   }
