@@ -76,7 +76,35 @@ function normalizeWhatsAppNumber(phone, location="") {
   else if (!hasInternationalPrefix && /nigeria|\bng\b/i.test(market) && digits.startsWith("0")) digits = "234" + digits.slice(1);
   return digits;
 }
-function makeEmail(v,b){return `Hello ${v.name},\n\nI'm enquiring about catering for a ${b.eventType} in ${b.location} on ${b.date} for approximately ${b.guests} guests.\n\nCould you please confirm:\n1. Whether you are available on that date and can serve this guest count.\n2. Your actual price, including per-person rate, delivery, taxes, staffing and any minimum order. Please specify the currency.\n3. Whether you can accommodate these dietary needs: ${b.dietary||"Please share your available dietary options"}.\n4. What the quoted price includes, and any deposit or cancellation terms.\n5. Your menu options and how long the quote remains valid.\n\nBudget guidance: ${b.budget!==null&&b.budget!==undefined?b.budget+" "+b.currency+" per person":"not specified"}.\nAdditional details: ${b.notes||"None at this stage"}.\n\nPlease share the price and availability you can actually offer for this date. Thank you.\n\nBest regards`;}
+function makeEmail(v,b){
+  const formatDate = value => {
+    if (!value) return "not specified";
+    const parsed = new Date(String(value).length === 10 ? String(value) + "T12:00:00" : value);
+    return Number.isNaN(parsed.getTime()) ? String(value) : parsed.toLocaleDateString("en-CA", {year:"numeric",month:"long",day:"numeric"});
+  };
+  return `Hello ${v.name},
+
+I'm CaterScout, an AI-assisted catering inquiry agent contacting on behalf of a customer planning a ${b.eventType||"group dining event"} in ${b.location||"the requested area"} on ${formatDate(b.date)} for approximately ${b.guests||"an unspecified number of"} guests.
+
+Could you please confirm the following?
+
+1. Availability and capacity: Are you available on this date, and can you accommodate this guest count?
+2. Pricing: Please provide your actual quote, including the per-person rate, delivery, taxes, staffing, service charges, and any minimum order or minimum spend. Please itemize the costs and specify the currency.
+3. Dietary options: Which dietary requirements can you accommodate? Please identify any limitations, cross-contamination considerations, or options that would need further confirmation.
+4. What's included: Please explain what food, beverages, equipment, delivery, setup, staffing, and service are included in the quote.
+5. Payment terms: Is a deposit required? Please share the payment schedule, cancellation policy, and any other applicable fees.
+6. Menus and quote validity: Could you share your available menus and indicate how long the quote remains valid?
+
+Budget: ${b.budget!==null&&b.budget!==undefined&&b.budget!==""?b.budget+" "+(b.currency||"currency to be confirmed")+" per person":"Not specified at this stage"}.
+Additional details: ${b.notes||"None provided yet"}.
+
+Please distinguish confirmed availability and pricing from anything that still needs confirmation. No booking or payment is being made through this inquiry.
+
+Thank you for your time. I look forward to your response.
+
+Best regards,
+CaterScout`;
+}
 $("#reply-form").addEventListener("submit",e=>{
   e.preventDefault();
   const f=e.currentTarget;
