@@ -17,7 +17,7 @@ async function searchOpenStreetMap(location) {
   if (!matches.length) throw new Error("Could not find that location. Try a city and state, such as Houston, Texas, USA.");
   const [lat, lon] = [Number(matches[0].lat), Number(matches[0].lon)];
   // Keep the query modest and try more than one public Overpass instance.
-  const query = `[out:json][timeout:18];(nwr(around:5000,${lat},${lon})["craft"="caterer"];nwr(around:10000,${lat},${lon})["shop"="caterer"];nwr(around:10000,${lat},${lon})["catering"="yes"];nwr(around:10000,${lat},${lon})["amenity"="restaurant"];);out center tags 30;`;
+  const query = `[out:json][timeout:18];(nwr(around:8000,${lat},${lon})["craft"="caterer"];nwr(around:15000,${lat},${lon})["shop"="caterer"];nwr(around:15000,${lat},${lon})["catering"="yes"];nwr(around:15000,${lat},${lon})["amenity"="restaurant"];nwr(around:15000,${lat},${lon})["amenity"="cafe"]["catering"="yes"];);out center tags 50;`
   const endpoints = [
     "https://overpass-api.de/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
@@ -116,7 +116,7 @@ async function searchOpenStreetMap(location) {
       mapsUrl: itemLat && itemLon ? "https://www.openstreetmap.org/?mlat=" + itemLat + "&mlon=" + itemLon + "#map=17/" + itemLat + "/" + itemLon : "",
       businessStatus: "UNKNOWN", source: "OpenStreetMap", status: "lead", price: "", details: "", evidence: ""
     };
-  }).filter(Boolean).sort((a, b) => (a.category === "Caterer" ? 0 : 1) - (b.category === "Caterer" ? 0 : 1)).slice(0, 30);
+  }).filter(Boolean).sort((a, b) => ((a.category === "Caterer" ? 0 : 1) - (b.category === "Caterer" ? 0 : 1)) || (((b.email ? 2 : 0) + (b.phone ? 1 : 0) + (b.website ? 1 : 0)) - ((a.email ? 2 : 0) + (a.phone ? 1 : 0) + (a.website ? 1 : 0)))).slice(0, 40);
 }
 
 export default async function handler(req, res) {
