@@ -5,6 +5,14 @@ try {
   const saved = JSON.parse(localStorage.getItem(storeKey) || "{}");
   state.brief = saved.brief || null;
   const raw = Array.isArray(saved.vendors) ? saved.vendors : [];
+  // Migrate the previous Houston test workspace to the requested Singapore market.
+  if (state.brief && /houston|texas/i.test(String(state.brief.location || ""))) {
+    state.brief.location = "Singapore";
+    state.brief.currency = "SGD";
+    // Do not mix old-market leads into the new market's results.
+    const hasOutreachHistory = raw.some(v => v && !["lead", "drafted"].includes(v.status));
+    if (!hasOutreachHistory) raw.length = 0;
+  }
   const seen = new Set();
   state.vendors = raw.filter(v => {
     if (!v || !String(v.name || "").trim() || /^unnamed\b/i.test(String(v.name).trim())) return false;
@@ -86,7 +94,7 @@ $("#export-csv").addEventListener("click",()=>{
   const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="caterscout-evidence-report.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
 $("#print-report").addEventListener("click",()=>{ $("#report-section").scrollIntoView({behavior:"smooth"}); setTimeout(()=>window.print(),250); });
-$("#switch-us-market").addEventListener("click",()=>{if(!confirm("Switch this workspace to the United States? This clears the current vendor shortlist so Nigerian leads are not mixed into the US search. Your event date, guest count, and other event details will be kept."))return;const locationField=document.querySelector('[name="location"]');const currencyField=document.querySelector('[name="currency"]');if(locationField)locationField.value="Houston, TX, USA";if(currencyField)currencyField.value="USD";state.brief={...(state.brief||briefFromForm()),location:"Houston, TX, USA",currency:"USD"};state.vendors=[];save();alert("Market switched to Houston, Texas, USA. Tap Find caterers to run a fresh search. Contact details and availability still need to be verified.");});
+$("#switch-us-market").addEventListener("click",()=>{if(!confirm("Switch this workspace to Singapore? This clears the current vendor shortlist so leads from different markets are not mixed. Your event date, guest count, and other event details will be kept."))return;const locationField=document.querySelector('[name="location"]');const currencyField=document.querySelector('[name="currency"]');if(locationField)locationField.value="Singapore";if(currencyField)currencyField.value="SGD";state.brief={...(state.brief||briefFromForm()),location:"Singapore",currency:"SGD"};state.vendors=[];save();alert("Market switched to Singapore. Tap Find caterers to run a fresh search. Contact details and availability still need to be verified.");});
 
 $("#clean-vendors").addEventListener("click",()=>{
   const before=state.vendors.length,seen=new Set();
