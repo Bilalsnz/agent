@@ -39,7 +39,61 @@ async function searchOpenStreetMap(location) {
       // Try the next public instance when this one times out or is unavailable.
     }
   }
-  if (!data) throw new Error("All public map search services are busy right now. Please retry in a minute, or use the manual vendor option.");
+  if (!data) {
+    // Overpass can be temporarily overloaded. Fall back to a small, user-triggered
+    // Nominatim POI search instead of failing the entire workflow.
+    const fallbackSearch = async (term) => {
+      const url = new URL("https://nominatim.openstreetmap.org/search");
+      url.searchParams.set("q", term + " in " + location);
+      url.searchParams.set("format", "jsonv2");
+      url.searchParams.set("limit", "20");
+      url.searchParams.set("layer", "poi");
+      url.searchParams.set("addressdetails", "1");
+      url.searchParams.set("extratags", "1");
+      url.searchParams.set("namedetails", "1");
+      const response = await fetch(url, {
+        headers: { "User-Agent": "CaterScoutAgent/0.3 (vendor research)" },
+        signal: AbortSignal.timeout(12000)
+      });
+      if (!response.ok) throw new Error("Fallback place search returned HTTP " + response.status);
+      return response.json();
+    };
+    try {
+      // One focused request first, and only a second request if it finds nothing.
+      let places = await fallbackSearch("caterer");
+      if (!places.length) {
+        await new Promise(resolve => setTimeout(resolve, 1100));
+        places = await fallbackSearch("restaurant");
+      }
+      const seenFallback = new Set();
+      const vendors = places.map((place) => {
+        const tags = place.extratags || {};
+        const name = String(place.name || place.namedetails?.name || "").trim();
+        if (!name) return null;
+        const address = String(place.display_name || "").trim();
+        const key = name.toLocaleLowerCase() + "|" + address.toLocaleLowerCase();
+        if (seenFallback.has(key)) return null;
+        seenFallback.add(key);
+        const website = tags.website || tags["contact:website"] || "";
+        const phone = tags.phone || tags["contact:phone"] || "";
+        const email = tags.email || tags["contact:email"] || "";
+        const lat = place.lat;
+        const lon = place.lon;
+        const category = /cater/i.test(name + " " + (place.type || "")) ? "Caterer" : "Restaurant / dining";
+        return {
+          placeId: "osm-" + place.osm_type + "-" + place.osm_id,
+          name, category, address, website, phone, email,
+          mapsUrl: lat && lon ? "https://www.openstreetmap.org/?mlat=" + lat + "&mlon=" + lon + "#map=17/" + lat + "/" + lon : "",
+          businessStatus: "UNKNOWN", source: "OpenStreetMap (Nominatim fallback)",
+          status: "lead", price: "", details: "", evidence: ""
+        };
+      }).filter(Boolean);
+      if (vendors.length) return vendors.slice(0, 20);
+    } catch {
+      // Keep the original actionable error below if the fallback is unavailable.
+    }
+    throw new Error("OpenStreetMap's map servers are temporarily unavailable, and the backup search found no usable listings. Wait a little and retry, or add vendors manually.");
+  }
   const seen = new Set();
   return (data.elements || []).map((item) => {
     const tags = item.tags || {};
