@@ -86,6 +86,8 @@ $("#export-csv").addEventListener("click",()=>{
   const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="caterscout-evidence-report.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
 $("#print-report").addEventListener("click",()=>{ $("#report-section").scrollIntoView({behavior:"smooth"}); setTimeout(()=>window.print(),250); });
+$("#switch-us-market").addEventListener("click",()=>{if(!confirm("Switch this workspace to the United States? This clears the current vendor shortlist so Nigerian leads are not mixed into the US search. Your event date, guest count, and other event details will be kept."))return;const locationField=document.querySelector('[name="location"]');const currencyField=document.querySelector('[name="currency"]');if(locationField)locationField.value="Houston, TX, USA";if(currencyField)currencyField.value="USD";state.brief={...(state.brief||briefFromForm()),location:"Houston, TX, USA",currency:"USD"};state.vendors=[];save();alert("Market switched to Houston, Texas, USA. Tap Find caterers to run a fresh search. Contact details and availability still need to be verified.");});
+
 $("#clean-vendors").addEventListener("click",()=>{
   const before=state.vendors.length,seen=new Set();
   state.vendors=state.vendors.filter(v=>{
