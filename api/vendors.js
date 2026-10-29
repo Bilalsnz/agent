@@ -3,19 +3,43 @@ async function searchOpenStreetMap(location) {
   geoUrl.searchParams.set("q", location);
   geoUrl.searchParams.set("format", "jsonv2");
   geoUrl.searchParams.set("limit", "1");
-  const geoResponse = await fetch(geoUrl, { headers: { "User-Agent": "CaterScoutAgent/0.1 (vendor research demo)" } });
-  if (!geoResponse.ok) throw new Error("Location lookup is temporarily unavailable.");
-  const matches = await geoResponse.json();
-  if (!matches.length) return [];
+  let matches;
+  try {
+    const geoResponse = await fetch(geoUrl, {
+      headers: { "User-Agent": "CaterScoutAgent/0.2 (vendor research)" },
+      signal: AbortSignal.timeout(12000)
+    });
+    if (!geoResponse.ok) throw new Error("Location lookup returned HTTP " + geoResponse.status);
+    matches = await geoResponse.json();
+  } catch {
+    throw new Error("Could not locate this city right now. Check the spelling and try again.");
+  }
+  if (!matches.length) throw new Error("Could not find that location. Try a city and state, such as Houston, Texas, USA.");
   const [lat, lon] = [Number(matches[0].lat), Number(matches[0].lon)];
-  const query = `[out:json][timeout:25];(nwr(around:15000,${lat},${lon})["craft"="caterer"];nwr(around:15000,${lat},${lon})["shop"="caterer"];nwr(around:15000,${lat},${lon})["catering"="yes"];nwr(around:15000,${lat},${lon})["amenity"="restaurant"];nwr(around:15000,${lat},${lon})["amenity"="fast_food"];);out center tags 80;`
-  const overpassResponse = await fetch("https://overpass-api.de/api/interpreter", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8", "User-Agent": "CaterScoutAgent/0.1 (vendor research demo)" },
-    body: "data=" + encodeURIComponent(query)
-  });
-  if (!overpassResponse.ok) throw new Error("OpenStreetMap vendor search is temporarily unavailable. Retry or add vendors manually.");
-  const data = await overpassResponse.json();
+  // Keep the query modest and try more than one public Overpass instance.
+  const query = `[out:json][timeout:18];(nwr(around:10000,${lat},${lon})["craft"="caterer"];nwr(around:10000,${lat},${lon})["shop"="caterer"];nwr(around:10000,${lat},${lon})["catering"="yes"];nwr(around:10000,${lat},${lon})["amenity"="restaurant"];);out center tags 60;`;
+  const endpoints = [
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.private.coffee/api/interpreter"
+  ];
+  let data = null;
+  for (const endpoint of endpoints) {
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8", "User-Agent": "CaterScoutAgent/0.2 (vendor research)" },
+        body: "data=" + encodeURIComponent(query),
+        signal: AbortSignal.timeout(22000)
+      });
+      if (!response.ok) continue;
+      const result = await response.json();
+      if (Array.isArray(result.elements)) { data = result; break; }
+    } catch {
+      // Try the next public instance when this one times out or is unavailable.
+    }
+  }
+  if (!data) throw new Error("All public map search services are busy right now. Please retry in a minute, or use the manual vendor option.");
   const seen = new Set();
   return (data.elements || []).map((item) => {
     const tags = item.tags || {};
@@ -24,7 +48,7 @@ async function searchOpenStreetMap(location) {
     const normalizedName = name.toLocaleLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
     const itemLat = item.lat ?? item.center?.lat;
     const itemLon = item.lon ?? item.center?.lon;
-    const address = [tags["addr:street"], tags["addr:housenumber"], tags["addr:city"]].filter(Boolean).join(" ");
+    const address = [tags["addr:housenumber"], tags["addr:street"], tags["addr:city"]].filter(Boolean).join(" ");
     const coords = itemLat && itemLon ? Number(itemLat).toFixed(4) + "," + Number(itemLon).toFixed(4) : "";
     const dedupeKey = normalizedName + "|" + (address.toLocaleLowerCase() || coords);
     if (seen.has(dedupeKey)) return null;
@@ -32,7 +56,7 @@ async function searchOpenStreetMap(location) {
     const website = tags.website || tags["contact:website"] || "";
     const phone = tags.phone || tags["contact:phone"] || "";
     const email = tags.email || tags["contact:email"] || "";
-    const category = tags.craft === "caterer" || tags.shop === "caterer" || tags.catering === "yes" ? "Caterer" : tags.amenity === "fast_food" ? "Quick service / takeaway" : "Restaurant / dining";
+    const category = tags.craft === "caterer" || tags.shop === "caterer" || tags.catering === "yes" ? "Caterer" : "Restaurant / dining";
     return {
       placeId: "osm-" + item.type + "-" + item.id, name, category, address, website, phone, email,
       mapsUrl: itemLat && itemLon ? "https://www.openstreetmap.org/?mlat=" + itemLat + "&mlon=" + itemLon + "#map=17/" + itemLat + "/" + itemLon : "",
