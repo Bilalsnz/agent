@@ -10,7 +10,7 @@ try {
     if (!v || !String(v.name || "").trim() || /^unnamed\b/i.test(String(v.name).trim())) return false;
     const norm = String(v.name).toLocaleLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
     const address = String(v.address || "").toLocaleLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-    const key = v.placeId ? "place:" + v.placeId : norm + "|" + address;
+    const key = norm + "|" + (address || v.placeId || "");
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -71,10 +71,10 @@ $("#print-report").addEventListener("click",()=>{ $("#report-section").scrollInt
 $("#clean-vendors").addEventListener("click",()=>{
   const before=state.vendors.length,seen=new Set();
   state.vendors=state.vendors.filter(v=>{
-    if(!String(v.name||"").trim()||/^unnamed\\b/i.test(String(v.name||"").trim()))return false;
+    if(!String(v.name||"").trim()||String(v.name||"").trim().toLowerCase().startsWith("unnamed"))return false;
     const name=String(v.name).toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
     const address=String(v.address||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
-    const key=v.placeId?"place:"+v.placeId:name+"|"+address;
+    const key=name+"|"+(address||v.placeId||"");
     if(seen.has(key)&&["lead","drafted"].includes(v.status))return false;
     seen.add(key);return true;
   });
