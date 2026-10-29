@@ -5,7 +5,7 @@ A practical catering and group-dining research agent for the NEAR AI Agent Marke
 ## Current scope
 
 - Event brief: location, date, guest count, dietary requirements, budget, and event type.
-- Vendor discovery via Google Places API (requires `GOOGLE_MAPS_API_KEY`). No fabricated vendor records are returned when discovery is unavailable.
+- Vendor discovery via OpenStreetMap/Nominatim by default (no API key required), with optional Google Places support when `GOOGLE_MAPS_API_KEY` is configured. Results are real map listings, not fabricated vendors.
 - Outreach drafts for each vendor, with a mailto fallback. Optional sending via Resend requires `RESEND_API_KEY` and a verified `RESEND_FROM` sender.
 - Local reply tracking and report export in the browser.
 - Prices and availability are marked confirmed only when a human records an actual vendor reply. No-reply vendors remain visible in the report.
@@ -21,7 +21,7 @@ Open the local URL printed by Vite. API routes run on Vercel, so for local API t
 
 ## Environment variables
 
-- `GOOGLE_MAPS_API_KEY`: enables real caterer discovery through Google Places Text Search.
+- `GOOGLE_MAPS_API_KEY`: optional; uses Google Places Text Search instead of the free OpenStreetMap search.
 - `RESEND_API_KEY`: optional email sending through Resend.
 - `RESEND_FROM`: verified sender identity, e.g. `CaterScout <events@yourdomain.com>`.
 
