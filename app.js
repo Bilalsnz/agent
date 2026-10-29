@@ -46,7 +46,7 @@ function openVendorDialog(v=null){
   $("#vendor-submit").textContent=v?"Save changes ↗":"Add to pipeline ↗";
   $("#vendor-dialog").showModal();
 }
-$("#add-vendor").addEventListener("click",openVendorDialog);$("#empty-add").addEventListener("click",openVendorDialog);$("#close-dialog").addEventListener("click",()=>$("#vendor-dialog").close());$("#close-reply").addEventListener("click",()=>$("#reply-dialog").close());
+$("#add-vendor").addEventListener("click",()=>openVendorDialog());$("#empty-add").addEventListener("click",()=>openVendorDialog());$("#close-dialog").addEventListener("click",()=>$("#vendor-dialog").close());$("#close-reply").addEventListener("click",()=>$("#reply-dialog").close());
 $("#vendor-form").addEventListener("submit",e=>{
   e.preventDefault();const f=new FormData(e.currentTarget);const name=String(f.get("name")||"").trim();if(!name)return;
   const vendorId=String(f.get("vendorId")||"");
